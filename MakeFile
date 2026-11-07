@@ -3,14 +3,6 @@
 CC = gcc
 # Компілятор C
 
-AR = ar
-# Утиліта для створення статичних бібліотек
-
-ARFLAGS = rcs
-# r : додати або замінити файли в бібліотеці
-# c : створити бібліотеку, якщо її немає
-# s : створити індекс символів бібліотеки
-
 CFLAGS = -Wall -Wextra
 # -Wall   : показувати основні попередження
 # -Wextra : показувати додаткові попередження
@@ -21,10 +13,12 @@ all: binary
 
 # --- Виконуваний файл ---
 
-# Залежить від main.o та статичної бібліотеки libfunctions.a
-# Підключає статичну бібліотеку безпосередньо під час компонування
-binary: main.o libfunctions.a
-	$(CC) -o binary main.o libfunctions.a
+# Залежить від main.o та динамічної бібліотеки libfunctions.dll
+# -L. : каталог з бібліотеками — поточний каталог
+# -lfunctions : підключити бібліотеку libfunctions
+# -Wl,... : передати параметр безпосередньо компонувальнику
+binary: main.o libfunctions.dll
+	$(CC) -o binary main.o -L. -lfunctions
 
 
 # --- Об'єктний файл main.c ---
@@ -35,13 +29,14 @@ main.o: main.c functions.h
 	$(CC) $(CFLAGS) -c main.c
 
 
-# --- Статична бібліотека ---
+# --- Динамічна бібліотека ---
 
 # Залежить від об'єктного файлу functions.o
-# $(AR) : виклик утиліти створення бібліотек
-# $(ARFLAGS) : параметри створення бібліотеки
-libfunctions.a: functions.o
-	$(AR) $(ARFLAGS) libfunctions.a functions.o
+# -shared : створити динамічну бібліотеку
+# -o : задати назву вихідного файлу
+# --out-implib : створити імпортну бібліотеку для компонування з DLL
+libfunctions.dll: functions.o
+	$(CC) -shared -o libfunctions.dll functions.o -Wl,--out-implib,libfunctions.dll.a
 
 
 # --- Об'єктний файл functions.c ---
@@ -56,7 +51,7 @@ functions.o: functions.c functions.h
 
 # rm -f : видалити файли без помилки, якщо їх немає
 clean:
-	rm -f *.o *.a binary binary.exe dest_file.txt test_3.bin
+	rm -f *.o *.dll *.a binary binary.exe dest_file.txt test_3.bin
 
 
 # - PHONY : цілі, які не є назвами реальних файлів
